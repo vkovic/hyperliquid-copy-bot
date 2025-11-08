@@ -116,7 +116,7 @@ class TradingDashboard:
             big_trades_table.add_column("Size", style="white", width=10)
             big_trades_table.add_column("Price", style="white", width=10)
             big_trades_table.add_column("Notional", style="bold green", width=12, justify="right")
-            big_trades_table.add_column("Trader", style="magenta", width=12)
+            big_trades_table.add_column("Trader", style="magenta", width=44)
 
             for trade in list(self.big_trades)[-15:]:  # Show last 15
                 side_style = "bold green" if trade['side'] == "BUY" else "bold red"
@@ -127,7 +127,7 @@ class TradingDashboard:
                     str(trade['size']),
                     str(trade['price']),
                     f"${trade['notional']:,.0f}",
-                    trade['trader'][:12] + "..." if len(trade['trader']) > 12 else trade['trader']
+                    trade['trader']
                 )
 
             # Biggest Trades Table (Right side) - sorted by notional value
@@ -144,7 +144,7 @@ class TradingDashboard:
             biggest_trades_table.add_column("Size", style="white", width=10)
             biggest_trades_table.add_column("Price", style="white", width=10)
             biggest_trades_table.add_column("Notional", style="bold green", width=12, justify="right")
-            biggest_trades_table.add_column("Trader", style="magenta", width=12)
+            biggest_trades_table.add_column("Trader", style="magenta", width=44)
 
             for trade in self.get_biggest_trades(15):
                 side_style = "bold green" if trade['side'] == "BUY" else "bold red"
@@ -155,7 +155,7 @@ class TradingDashboard:
                     str(trade['size']),
                     str(trade['price']),
                     f"${trade['notional']:,.0f}",
-                    trade['trader'][:12] + "..." if len(trade['trader']) > 12 else trade['trader']
+                    trade['trader']
                 )
 
             # Main content with two tables side by side
@@ -252,11 +252,8 @@ def on_trade(trade):
     
     # Check for individual big move alert
     if notional > BIG_MOVE_THRESHOLD:
-        # Format trader display name
-        if len(user_address) > 15:
-            trader_display = user_address[:12] + "..."
-        else:
-            trader_display = user_address
+        # Use full trader address
+        trader_display = user_address
             
         trade_data = {
             'coin': coin,
