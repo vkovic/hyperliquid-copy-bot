@@ -8,15 +8,6 @@ from hyperliquid.info import Info
 from hyperliquid.utils import constants
 from hyperliquid.websocket_manager import WebsocketManager
 
-# Import API tracking for rate limit monitoring
-try:
-    from rate_limit_checker import log_api_call
-    API_TRACKING_ENABLED = True
-except ImportError:
-    API_TRACKING_ENABLED = False
-    def log_api_call(*args, **kwargs):
-        pass  # No-op if rate_limit_checker not available
-
 # Rich imports for dashboard UI
 from rich.live import Live
 from rich.table import Table
@@ -263,15 +254,9 @@ def get_user_leverage(user_address, coin):
             if current_time - cached_time < CACHE_EXPIRY:
                 return cached_data
     
-    # Track API call timing
-    api_start_time = time.time()
-    api_error = None
-    api_status = None
-    
     try:
         # Query user state from API
         user_state = info.user_state(user_address)
-        api_status = 200
         
         if not user_state or 'assetPositions' not in user_state:
             return {'leverage': 0, 'position_value': 0, 'margin': 0}
@@ -325,18 +310,10 @@ def get_user_leverage(user_address, coin):
     
     except Exception as e:
         # If API call fails, return zeros
-        api_error = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'status_code'):
-            api_status = e.response.status_code
         print(f"[ERROR] Failed to get leverage for {user_address}: {e}")
         import traceback
         traceback.print_exc()
         return {'leverage': 0, 'position_value': 0, 'margin': 0}
-    
-    finally:
-        # Log API call for rate limit monitoring
-        api_duration = time.time() - api_start_time
-        log_api_call('user_state', api_duration, api_status, api_error)
 
 def on_trade(trade):
     """Callback for new trades. Alert on big moves with leverage."""
