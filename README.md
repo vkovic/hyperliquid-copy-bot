@@ -1,6 +1,70 @@
-# Hyperliquid Position Copier
+# Hyperliquid Trading Tools
 
-Copy trading bot for Hyperliquid. Monitors a target wallet and replicates positions in real-time.
+Collection of tools for monitoring and interacting with Hyperliquid trading platform.
+
+## Tools
+
+### 📊 fetch_assets.py
+Fetch and display assets for any Hyperliquid address.
+- Shows spot token balances with USD values
+- Shows futures positions with PNL, leverage, and liquidation prices
+- Quick one-time snapshot
+
+**Usage:**
+```bash
+python fetch_assets.py <address>
+
+# Example
+python fetch_assets.py 0x42b9493c505adf4b37dda028b6b47f7b5e8a5d1f
+```
+
+### 👁️ position_monitor.py
+Real-time monitoring of position changes for a target address.
+- Live dashboard with position tracking
+- Detects opened, closed, increased, decreased positions
+- Historical view of all position changes
+
+**Usage:**
+```bash
+export TARGET_ADDRESS='0x...'
+python position_monitor.py
+```
+
+### 📍 address_tracker.py
+Interactive address tracker with futures positions, spot holdings, and trade history.
+- Account value and PNL tracking
+- Recent trades history
+- Prompts for address interactively
+
+**Usage:**
+```bash
+python address_tracker.py
+```
+
+### 🎯 hyperliquid_monitor.py
+Market-wide trade monitoring for big moves.
+- Tracks all trades across all coins
+- Alerts on trades above threshold ($50K default)
+- Shows biggest trades and recent activity
+
+**Usage:**
+```bash
+python hyperliquid_monitor.py
+```
+
+### 🔄 position_copier.py
+Copy trading bot that replicates positions from a target wallet.
+- Real-time position mirroring
+- Automatic trade execution
+- Requires agent wallet with funds
+
+**Usage:**
+```bash
+export AGENT_PRIVATE_KEY='0x...'
+export MAIN_ACCOUNT_ADDRESS='0x...'
+export TARGET_ADDRESS='0x...'
+python position_copier.py
+```
 
 ## Setup
 
@@ -14,12 +78,20 @@ TARGET_ADDRESS=0x...
 ## Run Locally
 
 ```bash
+# Clone repository
+git clone https://github.com/vkovic/hyperliquid-copy-bot.git
+cd hyperliquid-copy-bot
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
-# Copy and configure .env
+# Configure environment
 cp .env.example .env
-# Edit .env with your credentials
+nano .env  # Edit with your credentials
 
 # Run
 python position_copier.py
@@ -27,73 +99,38 @@ python position_copier.py
 
 ## Deploy to DigitalOcean Droplet
 
-Recommended for accessing the live interactive dashboard.
+### Quick Setup
 
-1. **Create Droplet** ($6/month Basic):
-   - Ubuntu 22.04 LTS
-   - Basic plan (1GB RAM sufficient)
-
-2. **SSH into Droplet**:
+1. **SSH and Setup**:
    ```bash
    ssh root@your_droplet_ip
-   ```
-
-3. **Install Docker**:
-   ```bash
-   curl -fsSL https://get.docker.com -o get-docker.sh
-   sh get-docker.sh
-   apt-get install -y docker-compose
-   ```
-
-4. **Clone and Setup**:
-   ```bash
+   
+   # Install dependencies
+   apt update && apt upgrade -y
+   apt install -y python3 python3-pip python3-venv git tmux
+   
+   # Clone repo
    git clone https://github.com/vkovic/hyperliquid-copy-bot.git
    cd hyperliquid-copy-bot
+   
+   # Setup Python environment
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
    
    # Create .env file
    nano .env
    # Paste your credentials and save (Ctrl+X, Y, Enter)
    ```
 
-5. **Deploy**:
+2. **Run Script**:
    ```bash
-   # Quick deploy (automated)
-   ./deploy-droplet.sh
-   
-   # Or manual:
-   docker-compose up -d
-   ```
-
-6. **Run the Script**:
-   ```bash
-   # The container starts but doesn't auto-run the script
-   # Run manually to see live dashboard:
-   docker exec -it hyperliquid-position-copier python position_copier.py
-   
-   # Or enter container shell first:
-   docker exec -it hyperliquid-position-copier /bin/bash
+   # Direct run (stops when you disconnect)
    python position_copier.py
+   
+   # Or run in tmux (recommended - keeps running)
+   tmux new -s copier
+   python position_copier.py
+   # Detach: Ctrl+B, then D
+   # Reattach anytime: tmux attach -t copier
    ```
-
-**Management Commands**:
-```bash
-docker-compose restart    # Restart
-docker-compose logs -f    # View logs
-docker-compose down       # Stop
-docker-compose up -d      # Start
-```
-
-## Docker (Optional)
-
-```bash
-docker-compose up -d          # Start
-docker-compose logs -f        # Logs
-docker-compose down           # Stop
-```
-
-## Notes
-
-- Position copier only copies **new** positions opened after script starts
-- Uses isolated margin for safety
-- Auto-calculates position size based on account balance ratio
-
