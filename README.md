@@ -25,23 +25,63 @@ cp .env.example .env
 python position_copier.py
 ```
 
-## Deploy to DigitalOcean App Platform
+## Deploy to DigitalOcean Droplet
 
-1. Push to GitHub:
+Recommended for accessing the live interactive dashboard.
+
+1. **Create Droplet** ($6/month Basic):
+   - Ubuntu 22.04 LTS
+   - Basic plan (1GB RAM sufficient)
+
+2. **SSH into Droplet**:
    ```bash
-   git push origin master
+   ssh root@your_droplet_ip
    ```
 
-2. Create app in [DigitalOcean](https://cloud.digitalocean.com/apps):
-   - Connect your repository
-   - Will auto-detect `Dockerfile`
+3. **Install Docker**:
+   ```bash
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sh get-docker.sh
+   apt-get install -y docker-compose
+   ```
 
-3. Add environment variables in DO UI:
-   - `AGENT_PRIVATE_KEY` (encrypted)
-   - `MAIN_ACCOUNT_ADDRESS` (encrypted)
-   - `TARGET_ADDRESS` (encrypted)
+4. **Clone and Setup**:
+   ```bash
+   git clone https://github.com/vkovic/hyperliquid-copy-bot.git
+   cd hyperliquid-copy-bot
+   
+   # Create .env file
+   nano .env
+   # Paste your credentials and save (Ctrl+X, Y, Enter)
+   ```
 
-4. Deploy
+5. **Deploy**:
+   ```bash
+   # Quick deploy (automated)
+   ./deploy-droplet.sh
+   
+   # Or manual:
+   docker-compose up -d
+   ```
+
+6. **Run the Script**:
+   ```bash
+   # The container starts but doesn't auto-run the script
+   # Run manually to see live dashboard:
+   docker exec -it hyperliquid-position-copier python position_copier.py
+   
+   # Or enter container shell first:
+   docker exec -it hyperliquid-position-copier /bin/bash
+   python position_copier.py
+   ```
+
+**Management Commands**:
+```bash
+docker-compose restart    # Restart
+docker-compose logs -f    # View logs
+docker-compose down       # Stop
+docker-compose up -d      # Start
+```
 
 ## Docker (Optional)
 

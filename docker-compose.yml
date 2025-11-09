@@ -5,6 +5,8 @@ services:
     build: .
     container_name: hyperliquid-position-copier
     restart: unless-stopped
+    stdin_open: true    # Enable interactive mode
+    tty: true           # Allocate pseudo-TTY for rich dashboard
     environment:
       - AGENT_PRIVATE_KEY=${AGENT_PRIVATE_KEY}
       - MAIN_ACCOUNT_ADDRESS=${MAIN_ACCOUNT_ADDRESS}
@@ -14,11 +16,10 @@ services:
       - MAX_POSITION_PCT=${MAX_POSITION_PCT:-30.0}
     env_file:
       - .env
-    command: python position_copier.py
-    # Uncomment below for other scripts
-    # command: python hyperliquid_monitor.py
-    # command: python hyperliquid_leverage_monitor.py
-    # command: python address_tracker.py
+    command: tail -f /dev/null  # Keep container running, execute script manually
+    # To run manually:
+    # docker exec -it hyperliquid-position-copier python position_copier.py
+    # Or enter shell: docker exec -it hyperliquid-position-copier /bin/bash
 
   # Uncomment to run multiple services
   # monitor:
