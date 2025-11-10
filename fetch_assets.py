@@ -135,6 +135,70 @@ def fetch_spot_assets(address: str):
         return []
 
 
+def fetch_perpetual_trades(address: str, limit: int = 50):
+    """Fetch recent perpetual/futures trades for an address."""
+    try:
+        # Get perpetual trade fills
+        fills = info.user_fills(address)
+        
+        # Get metadata for coin names (convert @N notation to names)
+        meta = info.meta()
+        universe = {asset['name']: asset for asset in meta['universe']}
+        
+        # Also get spot metadata for @N notation
+        spot_meta = info.spot_meta()
+        index_to_name = {}
+        if spot_meta and 'tokens' in spot_meta:
+            for token in spot_meta['tokens']:
+                index_to_name[token['index']] = token['name']
+        
+        trades = []
+        if fills and len(fills) > 0:
+            # Sort by time (most recent first)
+            sorted_fills = sorted(fills, key=lambda x: x.get('time', 0), reverse=True)
+            
+            for fill in sorted_fills[:limit]:
+                coin = fill.get('coin', '')
+                
+                # Convert @N notation to coin name
+                if coin.startswith('@'):
+                    try:
+                        idx = int(coin.replace('@', ''))
+                        coin = index_to_name.get(idx, coin)
+                    except:
+                        pass
+                
+                side = "BUY" if fill.get('side') == "B" else "SELL"
+                size = abs(float(fill.get('sz', 0)))
+                price = float(fill.get('px', 0))
+                
+                # Get timestamp
+                timestamp = fill.get('time', 0)
+                dt = datetime.fromtimestamp(timestamp / 1000.0)
+                
+                # Get fee and PNL
+                fee = float(fill.get('fee', 0))
+                closed_pnl = float(fill.get('closedPnl', 0))
+                
+                trades.append({
+                    'time': dt,
+                    'coin': coin,
+                    'side': side,
+                    'size': size,
+                    'price': price,
+                    'notional': size * price,
+                    'fee': fee,
+                    'closed_pnl': closed_pnl,
+                    'hash': fill.get('hash', '')
+                })
+        
+        return trades
+    
+    except Exception as e:
+        console.print(f"[red]Error fetching perpetual trades: {e}[/red]")
+        return []
+
+
 def fetch_futures_positions(address: str):
     """Fetch futures positions for an address."""
     try:
@@ -264,6 +328,49 @@ def display_spot_assets(assets):
     console.print()
 
 
+def display_perpetual_trades(trades):
+    """Display perpetual/futures trades in a table."""
+    if not trades:
+        console.print("[yellow]No perpetual trades found[/yellow]\n")
+        return
+    
+    table = Table(
+        title=f"📊 PERPETUAL TRADE HISTORY (Last {len(trades)} trades)",
+        show_header=True,
+        header_style="bold magenta",
+        border_style="magenta",
+        box=ROUNDED
+    )
+    
+    table.add_column("Time", style="cyan", width=19)
+    table.add_column("Coin", style="bold yellow", width=10)
+    table.add_column("Side", width=6)
+    table.add_column("Size", justify="right", width=14)
+    table.add_column("Price", justify="right", width=14)
+    table.add_column("Notional", justify="right", width=14)
+    table.add_column("Closed PNL", justify="right", width=14)
+    table.add_column("Fee", justify="right", width=12)
+    
+    for trade in trades:
+        side_style = "bold green" if trade['side'] == "BUY" else "bold red"
+        pnl_style = "bold green" if trade['closed_pnl'] >= 0 else "bold red"
+        
+        table.add_row(
+            trade['time'].strftime("%Y-%m-%d %H:%M:%S"),
+            trade['coin'],
+            f"[{side_style}]{trade['side']}[/{side_style}]",
+            f"{trade['size']:.4f}",
+            f"${trade['price']:,.4f}",
+            f"${trade['notional']:,.2f}",
+            f"[{pnl_style}]${trade['closed_pnl']:+,.2f}[/{pnl_style}]",
+            f"${trade['fee']:.4f}"
+        )
+    
+    console.print(table)
+    console.print()
+    console.print("[dim italic]Note: Spot trade history is not available via the Hyperliquid API[/dim italic]\n")
+
+
 def display_futures_positions(positions, account_value, total_pnl):
     """Display futures positions in a table."""
     # Calculate total margin used in positions
@@ -382,6 +489,10 @@ def main():
     # Fetch futures positions
     futures_positions, account_value, total_pnl = fetch_futures_positions(target_address)
     display_futures_positions(futures_positions, account_value, total_pnl)
+    
+    # Fetch perpetual trades
+    perpetual_trades = fetch_perpetual_trades(target_address, limit=50)
+    display_perpetual_trades(perpetual_trades)
     
     console.print("[green]✓ Fetch complete![/green]")
     console.print()

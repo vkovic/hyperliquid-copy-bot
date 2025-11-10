@@ -34,6 +34,9 @@ AGENT_PRIVATE_KEY = os.getenv("AGENT_PRIVATE_KEY", "")
 MAIN_ACCOUNT_ADDRESS = os.getenv("MAIN_ACCOUNT_ADDRESS", "")
 TARGET_ADDRESS = os.getenv("TARGET_ADDRESS", "")
 
+# Load configuration from environment variables
+REFRESH_INTERVAL = int(os.getenv("REFRESH_INTERVAL", "10"))  # Default 10 seconds
+
 class PositionCopier:
     def __init__(self, target_address: str, private_key: str, main_account_address: str = None, copy_mode: str = "proportional", copy_ratio: float = 1.0, max_position_pct: float = 30.0, auto_calculate_ratio: bool = False):
         """
@@ -1069,9 +1072,9 @@ def main():
     max_position_pct = 75.0
     console.print("[cyan]✓ Max per position: 75% of balance[/cyan]")
     
-    # Hardcoded refresh interval
-    refresh_interval = 3
-    console.print("[cyan]✓ Refresh interval: 3 seconds[/cyan]")
+    # Use refresh interval from environment variable
+    refresh_interval = REFRESH_INTERVAL
+    console.print(f"[cyan]✓ Refresh interval: {refresh_interval} seconds[/cyan]")
     
     # Show summary (no confirmation needed)
     console.print("\n[bold cyan]═══════════════════════════════════════[/bold cyan]")
